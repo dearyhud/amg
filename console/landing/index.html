@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AMG — The gateway between your agents and everything they touch</title>
+<meta name="description" content="AMG is a policy-enforcing MCP gateway. Default-deny RBAC, argument-level constraints, credential brokering, human approvals, and a full audit trail for every AI agent in production." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink: #0c0c0e;
+    --ink-2: #45454d;
+    --ink-3: #76767f;
+    --paper: #ffffff;
+    --paper-2: #fafafa;
+    --line: #e8e8ea;
+    --line-2: #f1f1f3;
+    /* gateway palette (Rosé Pine Moon — matches the console) */
+    --gw-bg: #232136;
+    --gw-surface: #2a273f;
+    --gw-overlay: #393552;
+    --gw-text: #e0def4;
+    --gw-subtle: #908caa;
+    --gw-iris: #c4a7e7;
+    --gw-love: #eb6f92;
+    --gw-gold: #f6c177;
+    --gw-foam: #9ccfd8;
+    --gw-pine: #3e8fb0;
+    --radius: 12px;
+    --sans: "Inter", -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: var(--mono); }
+
+  /* ---------- nav ---------- */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,.82);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line-2);
+  }
+  .nav-inner { display: flex; align-items: center; gap: 32px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-family: var(--mono); font-weight: 600; font-size: 17px; letter-spacing: -0.02em; }
+  .brand svg { display: block; }
+  .nav-links { display: flex; gap: 26px; font-size: 14px; color: var(--ink-2); }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 999px; font-size: 14px; font-weight: 500;
+    padding: 9px 18px; border: 1px solid transparent;
+    transition: all .15s ease; cursor: pointer; white-space: nowrap;
+  }
+  .btn-primary { background: var(--ink); color: #fff; }
+  .btn-primary:hover { background: #2b2b30; }
+  .btn-ghost { color: var(--ink-2); }
+  .btn-ghost:hover { color: var(--ink); }
+  .btn-outline { border-color: var(--line); color: var(--ink); background: #fff; }
+  .btn-outline:hover { border-color: #d4d4d8; background: var(--paper-2); }
+  .btn-lg { padding: 12px 24px; font-size: 15px; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 96px 0 0;
+    background:
+      radial-gradient(52% 44% at 50% 0%, rgba(196,167,231,.14), transparent 70%),
+      radial-gradient(38% 34% at 78% 8%, rgba(156,207,216,.12), transparent 70%);
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(var(--line-2) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-2) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(60% 50% at 50% 0%, rgba(0,0,0,.5), transparent 78%);
+  }
+  .hero-inner { position: relative; text-align: center; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--line); background: #fff; border-radius: 999px;
+    font-size: 13px; color: var(--ink-2); padding: 6px 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gw-iris); box-shadow: 0 0 0 3px rgba(196,167,231,.25); }
+  .pill .mono { font-size: 12px; color: var(--ink); }
+  h1 {
+    margin: 26px auto 0; max-width: 820px;
+    font-size: clamp(44px, 7vw, 76px); line-height: 1.02;
+    letter-spacing: -0.045em; font-weight: 700;
+  }
+  h1 .quiet { color: var(--ink-3); }
+  .hero-sub {
+    margin: 22px auto 0; max-width: 620px;
+    font-size: 18px; line-height: 1.6; color: var(--ink-2);
+  }
+  .hero-sub .mono { font-size: 15.5px; background: var(--paper-2); border: 1px solid var(--line-2); border-radius: 6px; padding: 1px 6px; }
+  .hero-actions { margin-top: 34px; display: flex; gap: 12px; justify-content: center; }
+  .hero-caption { margin-top: 18px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); }
+
+  /* ---------- product frame (faux console) ---------- */
+  .frame-wrap { position: relative; margin: 64px auto 0; max-width: 1020px; padding: 0 24px; }
+  .frame {
+    border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 24px 64px -24px rgba(35,33,54,.35);
+    background: var(--gw-bg);
+    text-align: left;
+  }
+  .frame-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--gw-surface); border-bottom: 1px solid var(--gw-overlay);
+    padding: 11px 16px;
+  }
+  .frame-bar .traffic { display: flex; gap: 6px; }
+  .frame-bar .traffic i { width: 10px; height: 10px; border-radius: 50%; background: var(--gw-overlay); display: block; }
+  .frame-bar .url {
+    margin: 0 auto; font-family: var(--mono); font-size: 11.5px; color: var(--gw-subtle);
+    background: var(--gw-bg); border: 1px solid var(--gw-overlay); border-radius: 6px; padding: 3px 14px;
+  }
+  .console { display: grid; grid-template-columns: 176px 1fr; min-height: 380px; }
+  .console-side { background: var(--gw-surface); border-right: 1px solid var(--gw-overlay); padding: 14px 10px; font-size: 12.5px; color: var(--gw-subtle); }
+  .console-side .logo { font-family: var(--mono); font-weight: 600; color: var(--gw-text); padding: 2px 8px 12px; letter-spacing: -0.02em; }
+  .console-side .item { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 6px; margin-bottom: 1px; }
+  .console-side .item.active { background: var(--gw-overlay); color: var(--gw-text); font-weight: 500; }
+  .console-side .count { font-family: var(--mono); font-size: 10.5px; color: var(--gw-gold); background: rgba(246,193,119,.14); padding: 0 7px; border-radius: 6px; }
+  .console-main { padding: 16px 18px; }
+  .console-title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .console-title h3 { color: var(--gw-text); font-size: 14px; font-weight: 600; }
+  .console-title span { font-family: var(--mono); font-size: 11px; color: var(--gw-subtle); }
+  table.audit { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11.5px; }
+  table.audit th { text-align: left; color: var(--gw-subtle); font-weight: 500; padding: 6px 10px; border-bottom: 1px solid var(--gw-overlay); font-size: 10.5px; }
+  table.audit td { padding: 7px 10px; border-bottom: 1px solid rgba(57,53,82,.55); color: var(--gw-text); white-space: nowrap; }
+  table.audit td.sub, table.audit th.sub { color: var(--gw-subtle); }
+  .badge { display: inline-block; border-radius: 6px; padding: 1.5px 8px; font-size: 10.5px; font-weight: 500; }
+  .b-allow { color: var(--gw-subtle); background: rgba(144,140,170,.14); }
+  .b-deny { color: var(--gw-love); background: rgba(235,111,146,.14); }
+  .b-shadow { color: var(--gw-gold); background: rgba(246,193,119,.14); }
+  .b-approval { color: var(--gw-foam); background: rgba(62,143,176,.22); }
+
+  /* ---------- logo strip ---------- */
+  .logos { padding: 72px 0 8px; text-align: center; }
+  .logos p { font-size: 13px; color: var(--ink-3); margin-bottom: 26px; }
+  .logos-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px 56px; align-items: center; }
+  .logos-row span { font-weight: 600; font-size: 17px; letter-spacing: -0.02em; color: #b9b9c0; }
+  .logos-row span.serif { font-family: Georgia, serif; font-weight: 500; }
+  .logos-row span.monoq { font-family: var(--mono); font-weight: 500; }
+
+  /* ---------- sections ---------- */
+  section.block { padding: 96px 0 0; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px;
+  }
+  .block h2 { font-size: clamp(30px, 4vw, 44px); letter-spacing: -0.035em; line-height: 1.1; font-weight: 700; max-width: 560px; }
+  .block .lede { margin-top: 14px; max-width: 540px; color: var(--ink-2); font-size: 16.5px; }
+
+  /* bento */
+  .bento { margin-top: 44px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card {
+    border: 1px solid var(--line); border-radius: var(--radius);
+    background: #fff; padding: 22px; position: relative; overflow: hidden;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .card:hover { border-color: #d8d8dd; box-shadow: 0 8px 28px -16px rgba(35,33,54,.25); }
+  .card.span2 { grid-column: span 2; }
+  .card h3 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+  .card p { margin-top: 6px; font-size: 14px; color: var(--ink-2); }
+  .card .art { margin-top: 18px; }
+
+  .codebox {
+    background: var(--gw-bg); border: 1px solid var(--gw-overlay); border-radius: 10px;
+    padding: 14px 16px; font-family: var(--mono); font-size: 12.5px; line-height: 1.75;
+    color: var(--gw-text); overflow-x: auto;
+  }
+  .codebox .k { color: var(--gw-foam); }
+  .codebox .s { color: var(--gw-gold); }
+  .codebox .n { color: #ea9a97; }
+  .codebox .c { color: #6e6a86; font-style: italic; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-family: var(--mono); font-size: 12px; border-radius: 8px; padding: 5px 10px;
+    border: 1px solid var(--line); color: var(--ink-2); background: var(--paper-2);
+  }
+  .chip.bad { color: #c2334d; border-color: #f3cdd6; background: #fdf2f5; text-decoration: line-through; }
+  .chip.ok { color: #1c7287; border-color: #cde8ee; background: #f0f9fb; }
+
+  /* shadow chart */
+  .chart { display: flex; align-items: flex-end; gap: 7px; height: 96px; padding: 6px 2px 0; }
+  .chart i {
+    flex: 1; border-radius: 4px 4px 0 0; background: #efe3c0;
+    background: linear-gradient(180deg, #f3d9a4, #f0cf8d); display: block;
+    position: relative;
+  }
+  .chart i::after {
+    content: attr(data-v); position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 9.5px; color: var(--ink-3);
+  }
+  .chart i.zero { background: #e3f0ea; height: 4px !important; }
+  .chart-caption { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); margin-top: 8px; }
+
+  /* approval card */
+  .approval {
+    border: 1px solid var(--line); border-radius: 10px; background: var(--paper-2);
+    padding: 14px; font-size: 13px;
+  }
+  .approval .tool { font-family: var(--mono); font-size: 12.5px; }
+  .approval .meta { color: var(--ink-3); font-size: 12px; margin-top: 3px; }
+  .approval .row { display: flex; gap: 8px; margin-top: 12px; }
+  .approval .row .btn { padding: 5px 14px; font-size: 12.5px; border-radius: 8px; }
+  .approval .timer { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: #b07d2b; background: #fdf3e0; border-radius: 6px; padding: 3px 8px; align-self: center; }
+
+  /* vault diagram */
+  .flow { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 12px; color: var(--ink-2); flex-wrap: wrap; }
+  .flow .node { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 8px 12px; }
+  .flow .node.dark { background: var(--gw-bg); color: var(--gw-text); border-color: var(--gw-overlay); }
+  .flow .arrow { color: var(--ink-3); }
+  .flow .lock { color: #1c7287; }
+
+  /* mini audit rows */
+  .minirows { font-family: var(--mono); font-size: 11.5px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .minirows .r { display: flex; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line-2); align-items: center; }
+  .minirows .r:last-child { border-bottom: 0; }
+  .minirows .t { color: var(--ink-3); }
+  .minirows .badge { font-size: 10px; }
+  .lb-allow { color: #6b6b75; background: #f1f1f3; }
+  .lb-deny { color: #c2334d; background: #fdf2f5; }
+  .lb-shadow { color: #b07d2b; background: #fdf3e0; }
+
+  /* ---------- steps ---------- */
+  .steps { margin-top: 44px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .step { border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; background: #fff; }
+  .step .num { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+  .step h3 { margin-top: 10px; font-size: 16px; font-weight: 600; }
+  .step p { margin-top: 6px; font-size: 14px; color: var(--ink-2); }
+  .step .mono-line { margin-top: 14px; font-family: var(--mono); font-size: 12px; color: var(--ink-2); background: var(--paper-2); border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 10px; overflow-x: auto; white-space: nowrap; }
+
+  /* ---------- security band ---------- */
+  .band { margin-top: 96px; background: var(--gw-bg); color: var(--gw-text); padding: 88px 0; position: relative; overflow: hidden; }
+  .band::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(40% 60% at 85% 20%, rgba(196,167,231,.12), transparent 70%);
+  }
+  .band .wrap { position: relative; }
+  .band .eyebrow { color: var(--gw-subtle); }
+  .band h2 { color: var(--gw-text); }
+  .band .lede { color: var(--gw-subtle); }
+  .band-grid { margin-top: 40px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 32px; }
+  .band-item { display: flex; gap: 12px; align-items: flex-start; padding: 14px 0; border-top: 1px solid var(--gw-overlay); }
+  .band-item .tick { color: var(--gw-foam); font-family: var(--mono); }
+  .band-item b { font-weight: 600; font-size: 15px; }
+  .band-item p { font-size: 13.5px; color: var(--gw-subtle); margin-top: 2px; }
+
+  /* ---------- quote ---------- */
+  .quote { padding: 104px 0 0; text-align: center; }
+  .quote blockquote { max-width: 720px; margin: 0 auto; font-size: clamp(22px, 3vw, 30px); letter-spacing: -0.02em; line-height: 1.35; font-weight: 500; }
+  .quote blockquote .hl { background: linear-gradient(transparent 62%, rgba(196,167,231,.35) 62%); }
+  .quote figcaption { margin-top: 18px; font-size: 14px; color: var(--ink-3); }
+  .quote figcaption b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- cta ---------- */
+  .cta { padding: 104px 0 96px; text-align: center; }
+  .cta-box {
+    border: 1px solid var(--line); border-radius: 20px; padding: 72px 32px;
+    background:
+      radial-gradient(60% 90% at 50% 0%, rgba(156,207,216,.12), transparent 70%),
+      var(--paper-2);
+  }
+  .cta h2 { font-size: clamp(30px, 4vw, 44px); letter-spacing: -0.035em; max-width: 640px; margin: 0 auto; }
+  .cta p { margin: 16px auto 0; max-width: 460px; color: var(--ink-2); }
+  .cta .hero-actions { margin-top: 30px; }
+
+  /* ---------- footer ---------- */
+  footer { border-top: 1px solid var(--line-2); padding: 56px 0 40px; font-size: 13.5px; }
+  .foot-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px; }
+  .foot-grid h4 { font-size: 12.5px; color: var(--ink-3); font-weight: 500; margin-bottom: 12px; }
+  .foot-grid a { display: block; color: var(--ink-2); padding: 3px 0; }
+  .foot-grid a:hover { color: var(--ink); }
+  .foot-brand p { margin-top: 10px; color: var(--ink-3); max-width: 260px; }
+  .fine { margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--line-2); display: flex; justify-content: space-between; color: var(--ink-3); font-size: 12.5px; }
+
+  /* reveal */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .55s ease, transform .55s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+
+  @media (max-width: 900px) {
+    .nav-links { display: none; }
+    .bento { grid-template-columns: 1fr; }
+    .card.span2 { grid-column: span 1; }
+    .steps, .band-grid, .foot-grid { grid-template-columns: 1fr; }
+    .console { grid-template-columns: 1fr; }
+    .console-side { display: none; }
+    table.audit th:nth-child(n+5), table.audit td:nth-child(n+5) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0c0c0e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+      amg
+    </a>
+    <div class="nav-links">
+      <a href="#product">Product</a>
+      <a href="#how">How it works</a>
+      <a href="#security">Security</a>
+      <a href="#">Docs</a>
+      <a href="#">Changelog</a>
+    </div>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="#">Sign in</a>
+      <a class="btn btn-primary" href="#cta">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-inner">
+    <span class="pill"><span class="dot"></span> Private beta · <span class="mono">MCP&nbsp;gateway</span></span>
+    <h1>Every agent.<br /><span class="quiet">Exactly enough power.</span></h1>
+    <p class="hero-sub">
+      AMG sits between your AI agents and the tools they touch. Agents see one MCP server;
+      you decide which tools each role can call — down to the
+      <span class="mono">argument</span> — with every decision audited.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary btn-lg" href="#cta">Start building</a>
+      <a class="btn btn-outline btn-lg" href="#how">Read the docs</a>
+    </div>
+    <p class="hero-caption">default-deny · credential brokering · shadow mode · human approvals</p>
+  </div>
+
+  <div class="frame-wrap" id="product">
+    <div class="frame" role="img" aria-label="AMG console screenshot: the audit explorer showing allow, deny, and shadow-deny decisions">
+      <div class="frame-bar">
+        <span class="traffic"><i></i><i></i><i></i></span>
+        <span class="url">amg.internal/admin/audit</span>
+      </div>
+      <div class="console">
+        <aside class="console-side">
+          <div class="logo">amg</div>
+          <div class="item">Dashboard</div>
+          <div class="item">Roles</div>
+          <div class="item">Agents</div>
+          <div class="item">Upstreams</div>
+          <div class="item active">Audit</div>
+          <div class="item">Approvals <span class="count">2</span></div>
+          <div class="item">Settings</div>
+        </aside>
+        <div class="console-main">
+          <div class="console-title"><h3>Audit</h3><span>decision=any · last 24h</span></div>
+          <table class="audit">
+            <thead>
+              <tr><th>TIME</th><th>DECISION</th><th>TOOL</th><th class="sub">AGENT</th><th class="sub">ROLE</th><th class="sub">LATENCY</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="sub">14:02:11</td><td><span class="badge b-allow">allow</span></td><td>notion__get_pages</td><td class="sub">berg-enrichment-worker</td><td class="sub">notion_read</td><td class="sub">82ms</td></tr>
+              <tr><td class="sub">14:02:09</td><td><span class="badge b-shadow">shadow deny</span></td><td>notion__get_pages</td><td class="sub">berg-enrichment-worker</td><td class="sub">notion_read</td><td class="sub">114ms</td></tr>
+              <tr><td class="sub">14:01:55</td><td><span class="badge b-approval">needs approval</span></td><td>notion__delete_page</td><td class="sub">docs-crawler</td><td class="sub">docs_writer</td><td class="sub">—</td></tr>
+              <tr><td class="sub">14:01:48</td><td><span class="badge b-allow">allow</span></td><td>stripe__get_payment_intents</td><td class="sub">billing-reconciler</td><td class="sub">stripe_billing</td><td class="sub">211ms</td></tr>
+              <tr><td class="sub">14:01:31</td><td><span class="badge b-deny">deny</span></td><td>stripe__get_payment_intents</td><td class="sub">billing-reconciler</td><td class="sub">stripe_billing</td><td class="sub">—</td></tr>
+              <tr><td class="sub">14:01:30</td><td><span class="badge b-allow">allow</span></td><td>notion__get_users</td><td class="sub">berg-enrichment-worker</td><td class="sub">notion_read</td><td class="sub">67ms</td></tr>
+              <tr><td class="sub">14:01:12</td><td><span class="badge b-allow">allow</span></td><td>notion__search</td><td class="sub">berg-enrichment-worker</td><td class="sub">notion_read</td><td class="sub">93ms</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="logos reveal">
+  <div class="wrap">
+    <p>Trusted by platform teams putting agents into production</p>
+    <div class="logos-row" aria-hidden="true">
+      <span>bergmount</span>
+      <span class="serif">Tessellate</span>
+      <span class="monoq">quarry_</span>
+      <span>Lumenfold</span>
+      <span class="serif">Halloway&nbsp;&amp;&nbsp;Co</span>
+      <span class="monoq">vexel</span>
+    </div>
+  </div>
+</div>
+
+<section class="block" id="features">
+  <div class="wrap">
+    <div class="reveal">
+      <p class="eyebrow">Policy engine</p>
+      <h2>An API key is a blank check. A role is a contract.</h2>
+      <p class="lede">
+        Agents in production call tools with the full blast radius of whatever key they're handed.
+        AMG replaces the key with a scoped token, and the token with a policy.
+      </p>
+    </div>
+
+    <div class="bento">
+      <div class="card span2 reveal">
+        <h3>Default-deny RBAC, authored in YAML</h3>
+        <p>Roles are compiled and validated against the live upstream tool list at save time — not at 2am when the call fails.</p>
+        <div class="art codebox"><span class="k">role</span>: <span class="s">notion_read</span>
+<span class="k">servers</span>:
+  <span class="k">notion</span>:
+    <span class="k">tools</span>:
+      - <span class="k">name</span>: <span class="s">get_pages</span>
+        <span class="k">constraints</span>:
+          <span class="k">workspace_id</span>: { <span class="k">in</span>: [<span class="s">"ws_abc123"</span>] }
+<span class="k">approvals</span>:
+  - <span class="k">match</span>: <span class="s">"*delete*"</span>   <span class="c"># parked for a human</span>
+    <span class="k">require</span>: <span class="s">human</span></div>
+      </div>
+
+      <div class="card reveal">
+        <h3>Argument-level constraints</h3>
+        <p>Reads scoped to one workspace. Limits capped at 100. Unknown arguments? Denied by default.</p>
+        <div class="art chips">
+          <span class="chip ok">workspace_id in ["ws_abc123"]</span>
+          <span class="chip ok">limit lte 100</span>
+          <span class="chip bad">include_archived: true</span>
+          <span class="chip bad">admin_override: true</span>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <h3>Shadow mode</h3>
+        <p>Log would-be denials without enforcing. Promote to enforce when the line hits zero — like a migration cut-over.</p>
+        <div class="art">
+          <div class="chart" aria-hidden="true">
+            <i style="height:78%" data-v="31"></i><i style="height:62%" data-v="24"></i><i style="height:38%" data-v="15"></i><i style="height:26%" data-v="9"></i><i style="height:12%" data-v="4"></i><i style="height:6%" data-v="1"></i><i class="zero" data-v="0"></i>
+          </div>
+          <div class="chart-caption"><span>shadow denies / day</span><span>cut over ↗</span></div>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <h3>Human-in-the-loop approvals</h3>
+        <p>Destructive tools park instead of executing. The payload is immutable — approval forwards exactly what the agent sent.</p>
+        <div class="art approval">
+          <div class="tool">notion__delete_page</div>
+          <div class="meta">docs-crawler · docs_writer · {"page_id": "pg_runbook_archive"}</div>
+          <div class="row">
+            <span class="btn btn-primary">Approve</span>
+            <span class="btn btn-outline">Deny</span>
+            <span class="timer">expires 11:42</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <h3>Credential brokering</h3>
+        <p>Upstream secrets live in Vault and never reach the agent runtime. Agents hold one thing: an AMG token you can revoke in 30 seconds.</p>
+        <div class="art flow">
+          <span class="node">agent</span><span class="arrow">→</span>
+          <span class="node dark">amg</span><span class="arrow">→</span>
+          <span class="node"><span class="lock">⚿</span> vault</span><span class="arrow">→</span>
+          <span class="node">stripe api</span>
+        </div>
+      </div>
+
+      <div class="card reveal">
+        <h3>The audit log is the product</h3>
+        <p>Every decision lands with role, arguments (redacted), policy version, latency, and verdict. Replayable forever.</p>
+        <div class="art minirows">
+          <div class="r"><span class="t">14:02</span><span class="badge lb-allow">allow</span><span>notion__get_pages</span></div>
+          <div class="r"><span class="t">14:02</span><span class="badge lb-shadow">shadow deny</span><span>notion__get_pages</span></div>
+          <div class="r"><span class="t">14:01</span><span class="badge lb-deny">deny</span><span>stripe__get_payment_intents</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="how">
+  <div class="wrap">
+    <div class="reveal">
+      <p class="eyebrow">How it works</p>
+      <h2>One endpoint in. Policy in the middle. Everything out.</h2>
+      <p class="lede">Point your agent's MCP client at AMG. That's the whole integration.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <span class="num mono">01</span>
+        <h3>Agents authenticate to AMG</h3>
+        <p>A scoped bearer token resolves server-side to a role. Claimed roles are never honored — the agent is untrusted input.</p>
+        <div class="mono-line">Authorization: Bearer amg_4f9c…e2</div>
+      </div>
+      <div class="step reveal">
+        <span class="num mono">02</span>
+        <h3>Policy decides, in microseconds</h3>
+        <p>Tool visibility, call authorization, argument constraints, rate limits, approval gates. Any engine error fails closed.</p>
+        <div class="mono-line">(role, tool, args) → allow | deny | needs_approval</div>
+      </div>
+      <div class="step reveal">
+        <span class="num mono">03</span>
+        <h3>AMG calls upstream for them</h3>
+        <p>Credentials injected from Vault at the connection, never before. Result returned, decision audited, asynchronously.</p>
+        <div class="mono-line">notion__get_pages → mcp.notion.com · 82ms · ok</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="security">
+  <div class="wrap">
+    <div class="reveal">
+      <p class="eyebrow">Trust model</p>
+      <h2>Built like the agent is trying to escape. Because someday one will.</h2>
+      <p class="lede">Prompt injection can't escalate privileges it was never granted. The worst case is bounded by the grant — and the grant is yours.</p>
+    </div>
+    <div class="band-grid">
+      <div class="band-item reveal"><span class="tick">✓</span><div><b>Roles are never agent-declared</b><p>Bearer token → role, resolved server-side. Skill files are documentation, not authorization.</p></div></div>
+      <div class="band-item reveal"><span class="tick">✓</span><div><b>Fail closed, always</b><p>Malformed policy, engine error, unknown upstream — every failure path is a deny, never a passthrough.</p></div></div>
+      <div class="band-item reveal"><span class="tick">✓</span><div><b>Tokens are digests at rest</b><p>256-bit, shown once at issuance, revocable with a 30-second latency ceiling.</p></div></div>
+      <div class="band-item reveal"><span class="tick">✓</span><div><b>Secrets never touch agents</b><p>Upstream keys live in Vault, read into memory at connection time, absent from logs and the database.</p></div></div>
+      <div class="band-item reveal"><span class="tick">✓</span><div><b>Argument redaction before persistence</b><p>Sensitive fields never land in the audit log — redaction happens before the write, not after.</p></div></div>
+      <div class="band-item reveal"><span class="tick">✓</span><div><b>Strict tool namespacing</b><p>Path traversal, case games, and null bytes are rejected before routing — and the attempt is audited.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="quote">
+  <div class="wrap reveal">
+    <figure>
+      <blockquote>
+        “We went from <span class="hl">one Notion key that could delete everything</span> to per-agent
+        grants we can read in a screenful of YAML. The shadow-mode chart made the cut-over a non-event.”
+      </blockquote>
+      <figcaption><b>Mara Okafor</b> · Platform Engineering Lead, Bergmount</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="cta" id="cta">
+  <div class="wrap">
+    <div class="cta-box reveal">
+      <h2>Put a gateway between your agents and production.</h2>
+      <p>Self-hosted, open core. One <span class="mono" style="font-size:14px">docker compose up</span> away from your first scoped agent.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="#">Get started free</a>
+        <a class="btn btn-outline btn-lg" href="#">Book a demo</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="#">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0c0c0e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+          amg
+        </a>
+        <p>The policy-enforcing gateway between AI agents and the MCP servers and APIs they consume.</p>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <a href="#features">Policy engine</a>
+        <a href="#product">Audit explorer</a>
+        <a href="#features">Approvals</a>
+        <a href="#features">Shadow mode</a>
+      </div>
+      <div>
+        <h4>Resources</h4>
+        <a href="#">Documentation</a>
+        <a href="#how">How it works</a>
+        <a href="#">Changelog</a>
+        <a href="#">Status</a>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <a href="#security">Security</a>
+        <a href="#">GitHub</a>
+        <a href="#">Contact</a>
+      </div>
+    </div>
+    <div class="fine">
+      <span>© 2026 AMG. All rights reserved.</span>
+      <span class="mono" style="font-family:var(--mono); font-size:11.5px;">deny by default · audit by design</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver(
+    (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add("in")),
+    { threshold: 0.12 }
+  );
+  document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+</script>
+</body>
+</html>
