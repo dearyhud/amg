@@ -1,0 +1,166 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+/*
+ * Dark-first: :root IS Rosé Pine Moon. Light mode is a standard zinc theme
+ * behind the `.light` class. The mono/sans split is the visual system —
+ * if it came from the gateway, it's mono.
+ */
+:root {
+  --background: #232136; /* base */
+  --foreground: #e0def4; /* text */
+  --card: #2a273f; /* surface */
+  --card-foreground: #e0def4;
+  --popover: #2a273f;
+  --popover-foreground: #e0def4;
+  --primary: #c4a7e7; /* iris */
+  --primary-foreground: #232136;
+  --secondary: #393552; /* overlay */
+  --secondary-foreground: #e0def4;
+  --muted: #2a283e; /* highlight low */
+  --muted-foreground: #908caa; /* subtle */
+  --accent: #393552;
+  --accent-foreground: #e0def4;
+  --destructive: #eb6f92; /* love */
+  --destructive-foreground: #232136;
+  --warning: #f6c177; /* gold */
+  --warning-foreground: #232136;
+  --success: #9ccfd8; /* foam */
+  --success-foreground: #232136;
+  --info: #3e8fb0; /* pine */
+  --info-foreground: #e0def4;
+  --border: #393552; /* overlay */
+  --input: #44415a; /* highlight med */
+  --ring: #c4a7e7;
+  --chart-allow: #908caa;
+  --chart-deny: #eb6f92;
+  --chart-shadow-deny: #f6c177;
+  --chart-needs-approval: #3e8fb0;
+  --radius: 0.5rem;
+}
+
+.light {
+  --background: #fafafa;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #7c3aed;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --destructive-foreground: #fafafa;
+  --warning: #d97706;
+  --warning-foreground: #fafafa;
+  --success: #0d9488;
+  --success-foreground: #fafafa;
+  --info: #0369a1;
+  --info-foreground: #fafafa;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #7c3aed;
+  --chart-allow: #71717a;
+  --chart-deny: #dc2626;
+  --chart-shadow-deny: #d97706;
+  --chart-needs-approval: #0369a1;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-allow: var(--chart-allow);
+  --color-chart-deny: var(--chart-deny);
+  --color-chart-shadow-deny: var(--chart-shadow-deny);
+  --color-chart-needs-approval: var(--chart-needs-approval);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SF Mono", monospace;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: var(--border);
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+/* CodeMirror chrome shares the app tokens */
+.cm-editor {
+  height: 100%;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background-color: var(--card);
+}
+.cm-editor.cm-focused {
+  outline: none;
+}
+.cm-gutters {
+  background-color: var(--card) !important;
+  border-right: 1px solid var(--border) !important;
+  color: var(--muted-foreground) !important;
+}
+.cm-activeLine {
+  background-color: color-mix(in srgb, var(--secondary) 45%, transparent) !important;
+}
+.cm-activeLineGutter {
+  background-color: transparent !important;
+  color: var(--foreground) !important;
+}
+.cm-lintRange-error {
+  text-decoration: underline wavy var(--destructive);
+  background: none;
+}
+.cm-tooltip {
+  background-color: var(--popover) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--foreground) !important;
+  font-family: var(--font-sans);
+}
