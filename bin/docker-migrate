@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Run AMG's Sequel migrations inside the Docker environment.
+#
+# Idempotent: Sequel::Migrator no-ops when the schema is current and the
+# rake task prints the resulting schema_info version either way. Exits
+# non-zero on failure so it can gate CI or startup.
+#
+# Usage: bin/docker-migrate
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+# `compose run` starts dependencies and waits on the postgres healthcheck
+# (depends_on: condition: service_healthy), so this works on a cold stack.
+exec docker compose run --rm --build amg-admin bundle exec rake db:migrate

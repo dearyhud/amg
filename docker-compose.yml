@@ -1,0 +1,76 @@
+name: amg
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: amg
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-amg}
+      POSTGRES_DB: amg
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amg -d amg"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # Data plane: the MCP endpoint agents talk to (http://localhost:9292/mcp)
+  amg-data:
+    build: .
+    command: bundle exec puma -b tcp://0.0.0.0:9292 config.ru
+    environment: &backend_env
+      DATABASE_URL: postgres://amg:${POSTGRES_PASSWORD:-amg}@postgres:5432/amg
+      REDIS_URL: redis://redis:6379/0
+      # Env-backed secret broker (no Vault in the dev stack):
+      # vault_path "notion/key" reads AMG_SECRET_NOTION_KEY, etc.
+      AMG_SECRET_NOTION_KEY: ${AMG_SECRET_NOTION_KEY:-}
+      AMG_SECRET_STRIPE_KEY: ${AMG_SECRET_STRIPE_KEY:-}
+    ports:
+      - "9292:9292"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Admin plane: roles / agents / tokens / upstreams / approvals / audit
+  amg-admin:
+    build: .
+    command: bundle exec puma -b tcp://0.0.0.0:9293 admin.ru
+    environment:
+      <<: *backend_env
+      AMG_ADMIN_TOKEN: ${AMG_ADMIN_TOKEN:-dev-admin-token-change-me}
+      AMG_ADMIN_PASSWORD: ${AMG_ADMIN_PASSWORD:-amg-dev-password}
+    ports:
+      - "9293:9293"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Console: SPA at http://localhost:8080/admin/, talking to the admin
+  # plane through nginx (/admin/api -> amg-admin, /mcp -> amg-data).
+  # Set VITE_MOCK=1 to build it against its MSW mock API instead.
+  console:
+    build:
+      context: ./console
+      args:
+        VITE_MOCK: "${VITE_MOCK:-0}"
+    ports:
+      - "8080:80"
+    depends_on:
+      - amg-admin
+      - amg-data
+
+volumes:
+  pgdata:

@@ -29,5 +29,8 @@ run AMG::Admin::App.new(
   issuer: AMG::Auth::TokenIssuer.new(db: AMG.db, redis: AMG.redis),
   approval_gate: AMG::ApprovalGate.new(db: AMG.db, router: router),
   admin_token: ENV.fetch("AMG_ADMIN_TOKEN"),
-  registry: registry
+  registry: registry,
+  redis: AMG.redis,
+  admin_password: ENV["AMG_ADMIN_PASSWORD"], # unset = console login disabled
+  admin_email: ENV.fetch("AMG_ADMIN_EMAIL", "admin@localhost")
 )

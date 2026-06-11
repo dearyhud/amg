@@ -1,0 +1,6 @@
+console/
+spec/
+.git/
+.bundle/
+*.md
+.ruby-version

@@ -65,6 +65,21 @@ export const handlers = [
     }),
   ),
 
+  http.post(`${API}/auth/login`, async ({ request }) => {
+    const { password } = (await request.json()) as { password?: string };
+    if (!password || password === "wrong") {
+      return HttpResponse.json({ error: "invalid password" }, { status: 401 });
+    }
+    return HttpResponse.json({
+      user: { email: "hudson.deary@gmail.com", name: "Deary" },
+      csrf_token: "mock-csrf-token",
+    });
+  }),
+
+  http.get(`${API}/auth/logout`, () =>
+    new HttpResponse(null, { status: 302, headers: { Location: "/admin/" } }),
+  ),
+
   // roles
   http.get(`${API}/roles`, () =>
     HttpResponse.json({ roles: db.roles.map(serializeRole) }),

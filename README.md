@@ -33,7 +33,29 @@ spec/                         RSpec; pure policy specs, rack-test request specs,
                               and the security regression suite
 ```
 
-## Running
+## Running with Docker
+
+```sh
+cp .env.example .env          # set AMG_ADMIN_TOKEN + upstream secrets
+docker compose up --build
+bin/docker-migrate            # run migrations in the container (idempotent)
+```
+
+| Service | URL |
+|---|---|
+| Data plane (agents) | `http://localhost:9292/mcp` |
+| Admin API | `http://localhost:9293` |
+| Console | `http://localhost:8080/admin/` |
+
+The console talks to the admin plane through its nginx (`/admin/api/*` →
+admin plane, `/mcp` → data plane). Sign in with `AMG_ADMIN_PASSWORD`
+(default `amg-dev-password`) — the admin plane sets an httpOnly session
+cookie and enforces CSRF on mutations; the bearer-token API path is
+unchanged for automation. Endpoints the Ruby admin plane hasn't grown yet
+are listed in `console/README.md` ("Backend gaps"); set `VITE_MOCK=1` in
+`.env` to build the console against its MSW mock API instead.
+
+## Running locally
 
 Requirements: Ruby 3.3+ (`.ruby-version` pins 3.4.5), Postgres, Redis.
 

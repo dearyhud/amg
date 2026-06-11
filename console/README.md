@@ -27,9 +27,10 @@ handlers power Vitest.
 - **Same-origin**: built assets are served by the admin plane at `/admin`,
   API at `/admin/api`. Vite `base` and the router `basepath` are both
   `/admin`. No CORS; CSP is `default-src 'self'`; fonts self-hosted.
-- **Auth**: `/admin/api/me` gates the router. 401 renders the Google SSO
-  entry; OAuth and the allow-list live entirely server-side. The CSRF token
-  from `/me` rides every mutation.
+- **Auth**: `/admin/api/me` gates the router. 401 renders the sign-in form —
+  v1 is simple password auth (`POST /auth/login` against `AMG_ADMIN_PASSWORD`,
+  httpOnly session cookie set server-side; Google SSO is the eventual target
+  per the TDD). The CSRF token from `/me` rides every mutation.
 - **Every response crosses a zod boundary** (`src/api/schemas.ts`, snake_case
   mirroring the Ruby serializers). Parse failure = typed error, loud in dev.
 - **Query keys are factory-built** (`src/api/keys.ts`); enforcement-changing
@@ -64,8 +65,9 @@ handlers power Vitest.
 The Ruby admin plane (`../admin.ru`) currently speaks bearer-token CRUD. To
 take this console live it needs to grow, roughly in v1 order:
 
-1. `/admin/api` namespace + static serving of `dist/` at `/admin`
-2. Google SSO → httpOnly session cookie, `/me` (user + CSRF), allow-list
+1. ~~`/admin/api` namespace~~ (done: nginx proxies `/admin/api/*` → admin plane)
+2. ~~Session auth, `/me` (user + CSRF)~~ (done: password auth via
+   `AMG_ADMIN_PASSWORD`; Google SSO + allow-list still future)
 3. `POST /policies/compile` returning `{ok, errors:[{message, line, column}]}`
    from the real `AMG::Policy::Compiler`
 4. Policy **version history** storage (versions table) + role serializer

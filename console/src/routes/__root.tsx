@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { Outlet } from "@tanstack/react-router";
 import { Toaster } from "sonner";
 import { ShieldCheck } from "lucide-react";
-import { useMe } from "@/api/queries/me";
+import { useLogin, useMe } from "@/api/queries/me";
 import { useApprovalStream } from "@/api/queries/approvals";
+import { ApiError } from "@/api/client";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 
@@ -51,7 +55,15 @@ function StreamBridge() {
   return null;
 }
 
-function SignIn() {
+/*
+ * v1 ships simple password auth: POST /auth/login sets the httpOnly
+ * session cookie server-side. (Google SSO is the eventual target per the
+ * TDD; this gate swaps out without touching the rest of the shell.)
+ */
+export function SignIn() {
+  const [password, setPassword] = useState("");
+  const login = useLogin();
+
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6">
       <div className="flex items-center gap-3">
@@ -61,13 +73,37 @@ function SignIn() {
           <p className="text-sm text-muted-foreground">Agentic MCP Gateway · control plane</p>
         </div>
       </div>
-      <Button asChild size="lg">
-        {/* OAuth happens entirely server-side */}
-        <a href="/admin/api/auth/google">Continue with Google</a>
-      </Button>
+
+      <form
+        className="w-64 space-y-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (password) login.mutate(password);
+        }}
+      >
+        <div className="space-y-1.5">
+          <Label htmlFor="admin-password">Admin password</Label>
+          <Input
+            id="admin-password"
+            type="password"
+            autoComplete="current-password"
+            autoFocus
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+        {login.isError && (
+          <p className="text-xs text-destructive" role="alert">
+            {login.error instanceof ApiError ? login.error.message : "sign-in failed"}
+          </p>
+        )}
+        <Button type="submit" className="w-full" disabled={!password || login.isPending}>
+          {login.isPending ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+
       <p className="max-w-xs text-center text-xs text-muted-foreground">
-        Access is limited to the server-side admin allow-list. Sessions are first-party,
-        httpOnly cookies.
+        Sessions are first-party, httpOnly cookies. The SPA holds zero credentials.
       </p>
     </div>
   );

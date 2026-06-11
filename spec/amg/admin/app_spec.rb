@@ -10,13 +10,16 @@ RSpec.describe AMG::Admin::App do
   let(:admin_token) { "admin-secret" }
   let(:router) { Fakes::Router.new }
 
+  let(:admin_password) { "correct-horse-battery" }
   let(:app) do
     described_class.new(
       db: db,
       compiler: AMG::Policy::Compiler.new,
       issuer: AMG::Auth::TokenIssuer.new(db: db, redis: redis),
       approval_gate: AMG::ApprovalGate.new(db: db, router: router),
-      admin_token: admin_token
+      admin_token: admin_token,
+      redis: redis,
+      admin_password: admin_password
     )
   end
 
@@ -43,6 +46,77 @@ RSpec.describe AMG::Admin::App do
     expect(last_response.status).to eq(401)
     request(:get, "/roles", token: "wrong")
     expect(last_response.status).to eq(401)
+  end
+
+  describe "password session auth (console)" do
+    def login(password)
+      header "Content-Type", "application/json"
+      post "/auth/login", JSON.generate(password: password)
+      JSON.parse(last_response.body)
+    end
+
+    it "rejects a wrong password" do
+      login("wrong")
+      expect(last_response.status).to eq(401)
+    end
+
+    it "logs in, sets an httpOnly session cookie, and serves /me" do
+      body = login(admin_password)
+      expect(last_response.status).to eq(200)
+      expect(body["user"]).to include("email", "name")
+      expect(body["csrf_token"]).to match(/\A[0-9a-f]{64}\z/)
+      expect(last_response.headers["set-cookie"])
+        .to include("amg_admin_session=").and include("HttpOnly").and include("SameSite=Lax")
+
+      get "/me" # rack-test carries the cookie jar
+      expect(last_response.status).to eq(200)
+      expect(JSON.parse(last_response.body)["csrf_token"]).to eq(body["csrf_token"])
+    end
+
+    it "blocks session mutations without the CSRF token, allows them with it" do
+      csrf = login(admin_password)["csrf_token"]
+
+      header "Content-Type", "application/json"
+      post "/roles", JSON.generate("policy_yaml" => policy_yaml)
+      expect(last_response.status).to eq(403)
+
+      header "X-CSRF-Token", csrf
+      header "Content-Type", "application/json"
+      post "/roles", JSON.generate("policy_yaml" => policy_yaml)
+      expect(last_response.status).to eq(201)
+    end
+
+    it "leaves bearer-token mutations free of CSRF (no cookies involved)" do
+      header "Authorization", "Bearer #{admin_token}"
+      header "Content-Type", "application/json"
+      post "/roles", JSON.generate("policy_yaml" => policy_yaml)
+      expect(last_response.status).to eq(201)
+    end
+
+    it "logout kills the session" do
+      login(admin_password)
+      get "/auth/logout"
+      expect(last_response.status).to eq(302)
+      expect(last_response.headers["location"]).to eq("/admin/")
+
+      get "/me"
+      expect(last_response.status).to eq(401)
+    end
+
+    it "refuses login when no password is configured" do
+      bare = described_class.new(
+        db: db, compiler: AMG::Policy::Compiler.new,
+        issuer: AMG::Auth::TokenIssuer.new(db: db, redis: redis),
+        approval_gate: AMG::ApprovalGate.new(db: db, router: router),
+        admin_token: admin_token, redis: redis, admin_password: nil
+      )
+      response = Rack::MockRequest.new(bare).post(
+        "/auth/login",
+        input: JSON.generate(password: "anything"),
+        "CONTENT_TYPE" => "application/json"
+      )
+      expect(response.status).to eq(503)
+    end
   end
 
   it "manages the full role -> agent -> token lifecycle" do

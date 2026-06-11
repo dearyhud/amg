@@ -5,10 +5,16 @@ require "rack"
 module AMG
   module Admin
     # Control plane: roles, agents, tokens, upstreams, approvals, audit.
-    # Authenticated by a single admin bearer token (constant-time compared).
-    # Intended to sit behind your internal network / Retool, not the agents.
+    # Two ways in, both resolved server-side:
+    #   - bearer admin token (automation; constant-time compared)
+    #   - password login -> httpOnly session cookie + CSRF token (console)
+    # Intended to sit behind your internal network, not the agents.
     class App
-      def initialize(db:, compiler:, issuer:, approval_gate:, admin_token:, registry: nil)
+      SESSION_COOKIE = "amg_admin_session"
+      SESSION_TTL = 12 * 3600
+
+      def initialize(db:, compiler:, issuer:, approval_gate:, admin_token:, registry: nil,
+                     redis: nil, admin_password: nil, admin_email: "admin@localhost")
         raise Error, "admin_token must be configured" if admin_token.to_s.empty?
 
         @db = db
@@ -17,11 +23,28 @@ module AMG
         @approval_gate = approval_gate
         @admin_token = admin_token
         @registry = registry
+        @redis = redis
+        @admin_password = admin_password
+        @admin_email = admin_email
       end
 
       def call(env)
         req = Rack::Request.new(env)
-        return json(401, error: "unauthorized") unless authorized?(req)
+
+        return login(req) if req.post? && req.path == "/auth/login"
+        return logout(req) if req.path == "/auth/logout"
+
+        bearer = bearer_authorized?(req)
+        session = current_session(req)
+        return json(401, error: "unauthorized") unless bearer || session
+
+        # CSRF binds mutations to the session; bearer callers carry no
+        # cookies, so the check doesn't apply to them.
+        if !bearer && mutating?(req) && !csrf_ok?(req, session)
+          return json(403, error: "csrf token mismatch")
+        end
+
+        return me_response(session) if req.get? && req.path == "/me"
 
         route(req)
       rescue PolicyError, ApprovalError, Error => e
@@ -171,11 +194,78 @@ module AMG
         json(200, audit_events: ds.limit(limit).all)
       end
 
+      # -- auth -----------------------------------------------------------------
+
+      def login(req)
+        if @admin_password.to_s.empty? || @redis.nil?
+          return json(503, error: "password auth not configured")
+        end
+
+        password = body(req)["password"].to_s
+        return json(401, error: "invalid password") unless Util.secure_compare(password, @admin_password)
+
+        sid = SecureRandom.hex(32)
+        session = {
+          "email" => @admin_email,
+          "name" => "Admin",
+          "csrf_token" => SecureRandom.hex(32)
+        }
+        @redis.setex(session_key(sid), SESSION_TTL, JSON.generate(session))
+
+        status, headers, payload = me_response(session)
+        headers["set-cookie"] = session_cookie(sid, max_age: SESSION_TTL)
+        [status, headers, payload]
+      end
+
+      def logout(req)
+        sid = req.cookies[SESSION_COOKIE]
+        @redis&.del(session_key(sid)) if sid
+        [302, { "location" => "/admin/", "set-cookie" => session_cookie("", max_age: 0) }, []]
+      end
+
+      def me_response(session)
+        user =
+          if session
+            { email: session["email"], name: session["name"] }
+          else
+            { email: @admin_email, name: "Admin (bearer)" }
+          end
+        json(200, user: user, csrf_token: session ? session["csrf_token"] : "")
+      end
+
+      def current_session(req)
+        sid = req.cookies[SESSION_COOKIE]
+        return nil unless sid && @redis
+
+        raw = @redis.get(session_key(sid))
+        return nil unless raw
+
+        @redis.expire(session_key(sid), SESSION_TTL) # sliding window
+        JSON.parse(raw)
+      end
+
+      def csrf_ok?(req, session)
+        provided = req.get_header("HTTP_X_CSRF_TOKEN").to_s
+        !provided.empty? && Util.secure_compare(provided, session["csrf_token"].to_s)
+      end
+
+      def mutating?(req)
+        !(req.get? || req.head?)
+      end
+
+      def session_key(sid) = "amg:admin:session:#{sid}"
+
+      def session_cookie(sid, max_age:)
+        cookie = "#{SESSION_COOKIE}=#{sid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=#{max_age}"
+        cookie += "; Secure" if ENV["AMG_COOKIE_SECURE"] == "1"
+        cookie
+      end
+
       # -- plumbing -----------------------------------------------------------
 
-      def authorized?(req)
+      def bearer_authorized?(req)
         m = /\ABearer\s+(\S+)\z/.match(req.get_header("HTTP_AUTHORIZATION").to_s)
-        m && Util.secure_compare(m[1], @admin_token)
+        !!(m && Util.secure_compare(m[1], @admin_token))
       end
 
       def body(req)
