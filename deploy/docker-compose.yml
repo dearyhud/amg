@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: amg
+      POSTGRES_PASSWORD: amg
+      POSTGRES_DB: amg
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amg"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  amg:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8420:8420"
+    environment:
+      AMG_LISTEN_ADDR: ":8420"
+      AMG_DATABASE_URL: "postgres://amg:amg@postgres:5432/amg"
+      AMG_MASTER_KEY: "${AMG_MASTER_KEY:-+W/S8o2KvYhG8BifPvCsB1m6bFHRyNudaCcDpP5JtQI=}"
+      AMG_PUBLIC_URL: "${AMG_PUBLIC_URL:-http://localhost:8420}"
+      AMG_BOOTSTRAP_EMAIL: "${AMG_BOOTSTRAP_EMAIL:-deary@amg.com}"
+      AMG_BOOTSTRAP_PASSWORD: "${AMG_BOOTSTRAP_PASSWORD:-qwerty123}"
+      AMG_RATE_LIMIT_PER_MIN: "${AMG_RATE_LIMIT_PER_MIN:-60}"
+      AMG_LOG_LEVEL: "${AMG_LOG_LEVEL:-info}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "bundler/setup"
+require "puma/cli"
+
+root = File.expand_path("..", __dir__)
+Dir.chdir(root)
+
+listen_addr = ENV.fetch("AMG_LISTEN_ADDR", ":8420")
+host, port = listen_addr.sub(/\A:/, "0.0.0.0:").split(":")
+
+Puma::CLI.new(["-b", "tcp://#{host}:#{port}", "-C", File.join(root, "config", "puma.rb")]).run
