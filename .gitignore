@@ -1,0 +1,7 @@
+.DS_Store
+bin/
+cache/
+extensions/
+gems/
+specifications/
+
