@@ -91,8 +91,11 @@ export interface AuditEvent {
   workspace_id: string
   occurred_at: string
   agent_id: string | null
+  agent: string | null
+  role: string | null
   api_key_id: string | null
   upstream_id: string | null
+  upstream: string | null
   surface: "mcp" | "rest" | "admin"
   target: string
   decision: "allow" | "deny" | "error"

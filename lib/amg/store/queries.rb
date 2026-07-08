@@ -71,6 +71,35 @@ module AMG
         row.merge(oauth_connected: connected)
       end
 
+      # Agent display names and their bound active policy names, keyed by
+      # agent id — used to annotate audit events with "agent" / "role"
+      # without joining (and thus row-multiplying) the audit query itself.
+      def self.agent_identities(db, agent_ids)
+        return {} if agent_ids.empty?
+
+        names = db[:agents].where(id: agent_ids).select_hash(:id, :display_name)
+        policies = db[:agent_policy_bindings]
+          .join(:policies, id: :policy_id)
+          .where(Sequel[:agent_policy_bindings][:agent_id] => agent_ids)
+          .where(Sequel[:policies][:status] => "active")
+          .select(Sequel[:agent_policy_bindings][:agent_id], Sequel[:policies][:name])
+          .all
+          .group_by { |row| row[:agent_id] }
+          .transform_values { |rows| rows.map { |row| row[:name] } }
+
+        names.each_with_object({}) do |(id, display_name), out|
+          out[id] = { display_name: display_name, policies: policies[id] || [] }
+        end
+      end
+
+      # Upstream slugs, keyed by upstream id — used to annotate audit events
+      # with the upstream name without joining the audit query itself.
+      def self.upstream_slugs(db, upstream_ids)
+        return {} if upstream_ids.empty?
+
+        db[:upstreams].where(id: upstream_ids).select_hash(:id, :slug)
+      end
+
       def self.agents_bound_to_policy(db, policy_id)
         db[:agents]
           .join(:agent_policy_bindings, agent_id: :id)
