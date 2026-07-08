@@ -411,8 +411,15 @@ module AMG
         ds = AMG.db[:audit_events].order(Sequel.desc(:occurred_at))
         AUDIT_EQ_FILTERS.each { |param, column| ds = ds.where(column => params[param]) if params[param] }
         ds = ds.where { occurred_at >= Time.parse(params["from"]) } if params["from"]
-        ds = ds.where { occurred_at <= Time.parse(params["to"]) } if params["to"]
+        ds = ds.where { occurred_at < end_of_range(params["to"]) } if params["to"]
         ds
+      end
+
+      # A bare date (e.g. from a <input type=date>, "2026-07-07") means
+      # "through the end of that day", not midnight at its start.
+      def end_of_range(to)
+        parsed = Time.parse(to)
+        to =~ /\A\d{4}-\d{2}-\d{2}\z/ ? parsed + 86_400 : parsed
       end
     end
   end
