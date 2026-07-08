@@ -31,7 +31,11 @@ export function AgentsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-medium">Agents</h1>
         {!isReadOnly(admin) && (
-          <Button size="sm" asChild>
+          <Button
+            size="sm"
+            asChild
+            className="rounded-none bg-foreground font-mono text-xs tracking-widest text-background uppercase hover:bg-foreground/80"
+          >
             <Link to="/agents/new">New agent</Link>
           </Button>
         )}
@@ -47,32 +51,44 @@ export function AgentsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search agents…"
-            className="max-w-xs"
+            className="max-w-xs rounded-none"
           />
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Slug</TableHead>
-                <TableHead>Display name</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {agents.map((agent) => (
-                <TableRow
-                  key={agent.id}
-                  className="cursor-pointer"
-                  onClick={() => navigate({ to: "/agents/$agentId", params: { agentId: agent.id } })}
-                >
-                  <TableCell className="font-mono text-sm">{agent.slug}</TableCell>
-                  <TableCell>{agent.display_name}</TableCell>
-                  <TableCell>
-                    <StatusDot status={agent.status === "active" ? "healthy" : "degraded"} label={agent.status} />
-                  </TableCell>
+          <div className="border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                    Slug
+                  </TableHead>
+                  <TableHead className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                    Display name
+                  </TableHead>
+                  <TableHead className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                    Status
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {agents.map((agent) => (
+                  <TableRow
+                    key={agent.id}
+                    className="cursor-pointer"
+                    onClick={() => navigate({ to: "/agents/$agentId", params: { agentId: agent.id } })}
+                  >
+                    <TableCell className="font-mono text-sm">{agent.slug}</TableCell>
+                    <TableCell>{agent.display_name}</TableCell>
+                    <TableCell>
+                      <StatusDot
+                        status={agent.status === "active" ? "healthy" : "degraded"}
+                        label={agent.status}
+                        className="font-mono text-xs tracking-wide uppercase"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
           {agents.length === 0 && <p className="text-sm text-muted-foreground">No agents match "{search}".</p>}
         </>
       )}
