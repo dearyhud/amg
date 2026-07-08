@@ -1,11 +1,20 @@
-import { Fragment, useState } from "react"
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { StatusDot } from "@/components/status-dot"
+import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
 import type { AuditEvent } from "@/lib/types"
+
+const DECISION_STYLES: Record<AuditEvent["decision"], { badge: string; symbol: string; line: string }> = {
+  allow: { badge: "border-status-emerald text-status-emerald", symbol: "✓", line: "text-foreground" },
+  deny: {
+    badge: "border-status-red text-status-red",
+    symbol: "✗",
+    line: "text-status-red/70 line-through decoration-status-red/70",
+  },
+  error: { badge: "border-status-amber text-status-amber", symbol: "!", line: "text-status-amber/80" },
+}
 
 export function AuditPage() {
   const [decision, setDecision] = useState<string>("")
@@ -38,51 +47,63 @@ export function AuditPage() {
       ) : !data || data.events.length === 0 ? (
         <p className="text-sm text-muted-foreground">No audit events yet.</p>
       ) : (
-        <Table>
-          <TableHeader className="sticky top-0 bg-background">
-            <TableRow>
-              <TableHead>Time</TableHead>
-              <TableHead>Surface</TableHead>
-              <TableHead>Target</TableHead>
-              <TableHead>Decision</TableHead>
-              <TableHead>Latency</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.events.map((event) => (
-              <Fragment key={event.id}>
-                <TableRow
-                  key={event.id}
-                  className="cursor-pointer"
-                  onClick={() => setExpanded(expanded === event.id ? null : event.id)}
+        <div className="overflow-hidden rounded-lg border border-border bg-black">
+          {data.events.map((event) => {
+            const style = DECISION_STYLES[event.decision]
+            const isExpanded = expanded === event.id
+            return (
+              <div key={event.id} className="border-b border-white/5 last:border-b-0">
+                <button
+                  type="button"
+                  onClick={() => setExpanded(isExpanded ? null : event.id)}
+                  className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left hover:bg-white/[0.03]"
                 >
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {new Date(event.occurred_at).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">{event.surface}</TableCell>
-                  <TableCell className="font-mono text-xs">{event.target}</TableCell>
-                  <TableCell>
-                    <StatusDot
-                      status={event.decision === "allow" ? "allow" : event.decision === "error" ? "degraded" : "deny"}
-                      label={event.deny_reason ?? event.decision}
-                    />
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {event.latency_ms != null ? `${event.latency_ms}ms` : "—"}
-                  </TableCell>
-                </TableRow>
-                {expanded === event.id && (
-                  <TableRow key={`${event.id}-detail`}>
-                    <TableCell colSpan={5} className="bg-muted/50 font-mono text-xs">
-                      <div>request_id: {event.request_id}</div>
-                      <pre className="mt-1 whitespace-pre-wrap">{JSON.stringify(event.args_redacted, null, 2)}</pre>
-                    </TableCell>
-                  </TableRow>
+                  <span className="min-w-0">
+                    <span className={cn("block truncate font-mono text-sm", style.line)}>
+                      <span className="text-muted-foreground">$ </span>
+                      {event.upstream ?? "unknown upstream"}.{event.target}
+                    </span>
+                    <span className="mt-0.5 block truncate font-mono text-xs text-muted-foreground">
+                      {event.agent ?? "unknown agent"}
+                      {event.role ? ` · ${event.role}` : ""}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-3">
+                    <span className="hidden font-mono text-xs text-muted-foreground sm:inline">
+                      {new Date(event.occurred_at).toLocaleString()}
+                    </span>
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-sm border px-2.5 py-1 font-mono text-xs uppercase tracking-wide",
+                        style.badge,
+                      )}
+                    >
+                      {event.decision} {style.symbol}
+                    </span>
+                  </span>
+                </button>
+                {isExpanded && (
+                  <div className="border-t border-white/5 bg-white/[0.02] px-6 py-4 font-mono text-xs">
+                    <div className="text-muted-foreground">request_id: {event.request_id}</div>
+                    <div className="mt-1 text-muted-foreground">upstream: {event.upstream ?? "—"}</div>
+                    <div className="mt-1 text-muted-foreground">agent: {event.agent ?? "—"}</div>
+                    <div className="mt-1 text-muted-foreground">role: {event.role ?? "—"}</div>
+                    {event.deny_reason && <div className="mt-1 text-status-red/80">reason: {event.deny_reason}</div>}
+                    {event.matched_rule && (
+                      <div className="mt-1 text-muted-foreground">matched_rule: {event.matched_rule}</div>
+                    )}
+                    <div className="mt-1 text-muted-foreground">
+                      latency: {event.latency_ms != null ? `${event.latency_ms}ms` : "—"}
+                    </div>
+                    <pre className="mt-2 whitespace-pre-wrap text-foreground/90">
+                      {JSON.stringify(event.args_redacted, null, 2)}
+                    </pre>
+                  </div>
                 )}
-              </Fragment>
-            ))}
-          </TableBody>
-        </Table>
+              </div>
+            )
+          })}
+        </div>
       )}
     </div>
   )

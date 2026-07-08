@@ -391,7 +391,20 @@ module AMG
 
       def audit_list(r)
         rows = audit_dataset(r.params).limit(50).all
-        { "events" => rows, "next_cursor" => rows.length == 50 ? rows.last[:id] : nil }
+        { "events" => enrich_audit_events(rows), "next_cursor" => rows.length == 50 ? rows.last[:id] : nil }
+      end
+
+      def enrich_audit_events(rows)
+        identities = AMG::Store::Queries.agent_identities(AMG.db, rows.filter_map { |row| row[:agent_id] }.uniq)
+        upstreams = AMG::Store::Queries.upstream_slugs(AMG.db, rows.filter_map { |row| row[:upstream_id] }.uniq)
+        rows.map do |row|
+          identity = identities[row[:agent_id]]
+          row.merge(
+            "agent" => identity&.fetch(:display_name),
+            "role" => identity && identity[:policies].any? ? identity[:policies].join(", ") : nil,
+            "upstream" => upstreams[row[:upstream_id]]
+          )
+        end
       end
 
       def audit_dataset(params)
