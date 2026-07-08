@@ -8,17 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { api } from "@/lib/api"
+import { DECISION_STYLES } from "@/lib/decision"
 import type { Agent, AuditEvent, Upstream } from "@/lib/types"
-
-const DECISION_STYLES: Record<AuditEvent["decision"], { badge: string; symbol: string; line: string }> = {
-  allow: { badge: "border-status-emerald text-status-emerald", symbol: "✓", line: "text-foreground" },
-  deny: {
-    badge: "border-status-red text-status-red",
-    symbol: "✗",
-    line: "text-status-red/70 line-through decoration-status-red/70",
-  },
-  error: { badge: "border-status-amber text-status-amber", symbol: "!", line: "text-status-amber/80" },
-}
 
 interface Filters {
   decision: string
