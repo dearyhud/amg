@@ -75,3 +75,10 @@ crypto, admin API + console, docker-compose packaging. The acceptance
 narrative in `spec/acceptance/agent_e2e_spec.rb` drives a real MCP client
 against a real stdio MCP upstream and a real REST upstream through the full
 stack and passes end to end.
+
+## License
+
+AMG is source-available under the [Business Source License 1.1](LICENSE).
+You're free to read, modify, and self-host it in production; the license
+only restricts offering AMG itself as a hosted/managed service to third
+parties. Each release converts to Apache 2.0 four years after it ships.
