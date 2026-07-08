@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link, useNavigate, useParams } from "@tanstack/react-router"
-import { ArrowLeft, Copy, Trash2 } from "lucide-react"
+import { ArrowLeft, Trash2, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -63,6 +64,7 @@ export function PolicyBuilderPage() {
   const [toolsByUpstream, setToolsByUpstream] = useState<Record<string, Tool[]>>({})
   const [agentToBind, setAgentToBind] = useState("")
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [tryItOpen, setTryItOpen] = useState(false)
 
   const [simUpstreamId, setSimUpstreamId] = useState("")
   const [simTarget, setSimTarget] = useState("")
@@ -157,14 +159,6 @@ export function PolicyBuilderPage() {
     onSuccess: (policy) => queryClient.setQueryData(["policies", policyId], policy),
   })
 
-  const duplicatePolicy = useMutation({
-    mutationFn: () => api<Policy>("/policies", { method: "POST", body: { name: `${name} copy`, rules } }),
-    onSuccess: (policy) => {
-      void queryClient.invalidateQueries({ queryKey: ["policies"] })
-      void navigate({ to: "/policies/$policyId", params: { policyId: policy.id } })
-    },
-  })
-
   const deletePolicy = useMutation({
     mutationFn: () => api(`/policies/${policyId}`, { method: "DELETE" }),
     onSuccess: () => {
@@ -249,10 +243,99 @@ export function PolicyBuilderPage() {
                 <Button size="sm" variant="outline" onClick={() => toggleStatus.mutate()}>
                   <StatusDot status={policy.status === "active" ? "healthy" : "degraded"} label={policy.status} />
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => duplicatePolicy.mutate()}>
-                  <Copy className="mr-1.5 size-3.5" />
-                  Duplicate
-                </Button>
+                <Dialog open={tryItOpen} onOpenChange={setTryItOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <Zap className="mr-1.5 size-3.5" />
+                      Simulate
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Simulate</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Tests against the rules above as they currently stand in this editor — no need to save
+                        first.
+                      </p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Select
+                          value={simUpstreamId}
+                          onValueChange={(v) => {
+                            setSimUpstreamId(v)
+                            setSimTarget("")
+                            void ensureTools(v)
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Upstream" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {upstreamsQuery.data?.upstreams.map((u) => (
+                              <SelectItem key={u.id} value={u.id}>
+                                {u.slug}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div>
+                          <Input
+                            placeholder="target"
+                            value={simTarget}
+                            onChange={(e) => setSimTarget(e.target.value)}
+                            className="font-mono text-sm"
+                            list={simTools.length > 0 ? "sim-targets" : undefined}
+                          />
+                          {simTools.length > 0 && (
+                            <datalist id="sim-targets">
+                              {simTools.map((t) => (
+                                <option key={t.name} value={t.name} />
+                              ))}
+                            </datalist>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <Label>Arguments (JSON)</Label>
+                          {simUpstream && simUpstream.kind !== "rest" && (
+                            <button
+                              type="button"
+                              className="text-xs text-primary hover:underline"
+                              onClick={() => setSimArgs(exampleArgs(simTool))}
+                            >
+                              Fill example
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                          className="h-24 w-full rounded-md border border-input bg-transparent p-2 font-mono text-xs"
+                          value={simArgs}
+                          onChange={(e) => setSimArgs(e.target.value)}
+                        />
+                      </div>
+                      {simError && (
+                        <Alert variant="destructive">
+                          <AlertDescription>{simError}</AlertDescription>
+                        </Alert>
+                      )}
+                      {simResult && (
+                        <Alert variant={simResult.allowed ? "default" : "destructive"}>
+                          <AlertDescription>
+                            {simResult.allowed ? "Allowed" : `Denied — ${simResult.reason}`}
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                      <Button
+                        disabled={!simUpstreamId || !simTarget || simulate.isPending}
+                        onClick={() => simulate.mutate()}
+                      >
+                        Run
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
                 <Button
                   size="sm"
                   variant="outline"
@@ -303,88 +386,6 @@ export function PolicyBuilderPage() {
               Create policy
             </Button>
           )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-medium text-muted-foreground">Try it</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-xs text-muted-foreground">
-            Tests against the rules above as they currently stand in this editor — no need to save first.
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            <Select
-              value={simUpstreamId}
-              onValueChange={(v) => {
-                setSimUpstreamId(v)
-                setSimTarget("")
-                void ensureTools(v)
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Upstream" />
-              </SelectTrigger>
-              <SelectContent>
-                {upstreamsQuery.data?.upstreams.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.slug}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div>
-              <Input
-                placeholder="target"
-                value={simTarget}
-                onChange={(e) => setSimTarget(e.target.value)}
-                className="font-mono text-sm"
-                list={simTools.length > 0 ? "sim-targets" : undefined}
-              />
-              {simTools.length > 0 && (
-                <datalist id="sim-targets">
-                  {simTools.map((t) => (
-                    <option key={t.name} value={t.name} />
-                  ))}
-                </datalist>
-              )}
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label>Arguments (JSON)</Label>
-              {simUpstream && simUpstream.kind !== "rest" && (
-                <button
-                  type="button"
-                  className="text-xs text-primary hover:underline"
-                  onClick={() => setSimArgs(exampleArgs(simTool))}
-                >
-                  Fill example
-                </button>
-              )}
-            </div>
-            <textarea
-              className="h-24 w-full rounded-md border border-input bg-transparent p-2 font-mono text-xs"
-              value={simArgs}
-              onChange={(e) => setSimArgs(e.target.value)}
-            />
-          </div>
-          {simError && (
-            <Alert variant="destructive">
-              <AlertDescription>{simError}</AlertDescription>
-            </Alert>
-          )}
-          {simResult && (
-            <Alert variant={simResult.allowed ? "default" : "destructive"}>
-              <AlertDescription>
-                {simResult.allowed ? "Allowed" : `Denied — ${simResult.reason}`}
-              </AlertDescription>
-            </Alert>
-          )}
-          <Button disabled={!simUpstreamId || !simTarget || simulate.isPending} onClick={() => simulate.mutate()}>
-            Run
-          </Button>
         </CardContent>
       </Card>
 

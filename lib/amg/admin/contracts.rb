@@ -98,6 +98,7 @@ module AMG
           required(:target).filled(:string)
           optional(:args).hash
           required(:rules).array(:hash) do
+            optional(:upstream_id).filled(:string)
             required(:target).filled(:string)
             optional(:constraints).array(:hash)
             optional(:strict_args).filled(:bool)
