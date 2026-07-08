@@ -69,7 +69,7 @@ export function PolicyRuleEditor({
         const pathListId = `paths-${ruleIndex}`
 
         return (
-          <div key={ruleIndex} className="space-y-3 rounded-md border border-border p-3">
+          <div key={ruleIndex} className="space-y-3 border border-border p-3">
             <div className="grid grid-cols-[1fr_1fr_auto] gap-3">
               <Select
                 value={rule.upstream_id}
@@ -79,7 +79,7 @@ export function PolicyRuleEditor({
                   onUpstreamUsed?.(v)
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="rounded-none">
                   <SelectValue placeholder="Upstream" />
                 </SelectTrigger>
                 <SelectContent>
@@ -95,7 +95,7 @@ export function PolicyRuleEditor({
                   placeholder={isMcp ? "tool name, or * for all" : "METHOD /path, or * for all"}
                   value={rule.target}
                   onChange={(e) => updateRule(ruleIndex, { target: e.target.value })}
-                  className="font-mono text-sm"
+                  className="rounded-none font-mono text-sm"
                   list={isMcp && tools.length > 0 ? targetListId : undefined}
                   disabled={readOnly}
                 />
@@ -108,7 +108,13 @@ export function PolicyRuleEditor({
                 )}
               </div>
               {!readOnly && (
-                <Button size="icon-sm" variant="ghost" onClick={() => removeRule(ruleIndex)} aria-label="Remove rule">
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="rounded-none"
+                  onClick={() => removeRule(ruleIndex)}
+                  aria-label="Remove rule"
+                >
                   <X className="size-4" />
                 </Button>
               )}
@@ -123,7 +129,7 @@ export function PolicyRuleEditor({
                       placeholder="/path"
                       value={c.path}
                       onChange={(e) => updateConstraint(ruleIndex, cIndex, { path: e.target.value })}
-                      className="font-mono text-sm"
+                      className="rounded-none font-mono text-sm"
                       list={props.length > 0 ? pathListId : undefined}
                       disabled={readOnly}
                     />
@@ -136,7 +142,7 @@ export function PolicyRuleEditor({
                     )}
                   </div>
                   <Select value={c.op} disabled={readOnly} onValueChange={(v) => updateConstraint(ruleIndex, cIndex, { op: v })}>
-                    <SelectTrigger className="w-28">
+                    <SelectTrigger className="w-28 rounded-none">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -151,13 +157,14 @@ export function PolicyRuleEditor({
                     placeholder="value"
                     value={String(c.value ?? "")}
                     onChange={(e) => updateConstraint(ruleIndex, cIndex, { value: e.target.value })}
-                    className="font-mono text-sm"
+                    className="rounded-none font-mono text-sm"
                     disabled={readOnly}
                   />
                   {!readOnly && (
                     <Button
                       size="icon-sm"
                       variant="ghost"
+                      className="rounded-none"
                       onClick={() => removeConstraint(ruleIndex, cIndex)}
                       aria-label="Remove constraint"
                     >
@@ -168,7 +175,12 @@ export function PolicyRuleEditor({
               )
             })}
             {!readOnly && (
-              <Button size="sm" variant="ghost" onClick={() => addConstraint(ruleIndex)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="rounded-none font-mono text-xs tracking-widest uppercase"
+                onClick={() => addConstraint(ruleIndex)}
+              >
                 + constraint
               </Button>
             )}
@@ -176,7 +188,12 @@ export function PolicyRuleEditor({
         )
       })}
       {!readOnly && (
-        <Button size="sm" variant="outline" onClick={addRule}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-none font-mono text-xs tracking-widest uppercase"
+          onClick={addRule}
+        >
           + rule
         </Button>
       )}

@@ -31,7 +31,11 @@ export function PoliciesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-medium">Policies</h1>
         {!readOnly && (
-          <Button size="sm" asChild>
+          <Button
+            size="sm"
+            asChild
+            className="rounded-none bg-foreground font-mono text-xs tracking-widest text-background uppercase hover:bg-foreground/80"
+          >
             <Link to="/policies/new">New policy</Link>
           </Button>
         )}
@@ -50,36 +54,52 @@ export function PoliciesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search policies…"
-            className="max-w-xs"
+            className="max-w-xs rounded-none"
           />
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Rules</TableHead>
-                <TableHead>Bound agents</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {policies.map((p) => (
-                <TableRow
-                  key={p.id}
-                  className="cursor-pointer"
-                  onClick={() => navigate({ to: "/policies/$policyId", params: { policyId: p.id } })}
-                >
-                  <TableCell className="font-medium">{p.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{p.rule_count ?? p.rules?.length ?? 0}</Badge>
-                  </TableCell>
-                  <TableCell>{p.bound_agents}</TableCell>
-                  <TableCell>
-                    <StatusDot status={p.status === "active" ? "healthy" : "degraded"} label={p.status} />
-                  </TableCell>
+          <div className="border border-border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                    Name
+                  </TableHead>
+                  <TableHead className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                    Rules
+                  </TableHead>
+                  <TableHead className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                    Bound agents
+                  </TableHead>
+                  <TableHead className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                    Status
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {policies.map((p) => (
+                  <TableRow
+                    key={p.id}
+                    className="cursor-pointer"
+                    onClick={() => navigate({ to: "/policies/$policyId", params: { policyId: p.id } })}
+                  >
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="rounded-none font-mono">
+                        {p.rule_count ?? p.rules?.length ?? 0}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{p.bound_agents}</TableCell>
+                    <TableCell>
+                      <StatusDot
+                        status={p.status === "active" ? "healthy" : "degraded"}
+                        label={p.status}
+                        className="font-mono text-xs tracking-wide uppercase"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
           {policies.length === 0 && (
             <p className="text-sm text-muted-foreground">No policies match "{search}".</p>
           )}
