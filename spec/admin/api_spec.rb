@@ -265,7 +265,7 @@ RSpec.describe "Admin API" do
     it "simulates against rules passed directly in the request, ignoring any persisted policy" do
       json_post("/api/v1/policies/simulate", {
                   upstream_id: upstream_id, target: "get_issue", args: {},
-                  rules: [{ target: "get_issue", constraints: [], strict_args: false }]
+                  rules: [{ upstream_id: upstream_id, target: "get_issue", constraints: [], strict_args: false }]
                 })
       expect(JSON.parse(last_response.body)["allowed"]).to be true
     end
@@ -273,7 +273,22 @@ RSpec.describe "Admin API" do
     it "denies via draft simulate when no draft rule matches the target" do
       json_post("/api/v1/policies/simulate", {
                   upstream_id: upstream_id, target: "delete_issue", args: {},
-                  rules: [{ target: "get_issue", constraints: [], strict_args: false }]
+                  rules: [{ upstream_id: upstream_id, target: "get_issue", constraints: [], strict_args: false }]
+                })
+      denied = JSON.parse(last_response.body)
+      expect(denied["allowed"]).to be false
+      expect(denied["reason"]).to eq("no_rule")
+    end
+
+    it "denies via draft simulate when the matching rule belongs to a different upstream" do
+      other_upstream_id = db[:upstreams].returning(:id).insert(
+        workspace_id: workspace_id, slug: "stripe", display_name: "Stripe", kind: "mcp_stdio",
+        config: Sequel.pg_jsonb({})
+      ).first[:id]
+
+      json_post("/api/v1/policies/simulate", {
+                  upstream_id: upstream_id, target: "get_issue", args: {},
+                  rules: [{ upstream_id: other_upstream_id, target: "get_issue", constraints: [], strict_args: false }]
                 })
       denied = JSON.parse(last_response.body)
       expect(denied["allowed"]).to be false

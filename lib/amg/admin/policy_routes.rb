@@ -110,7 +110,9 @@ module AMG
         return json_error(404, "upstream_not_found") unless upstream
 
         kind = upstream[:kind] == "rest" ? :rest : :mcp
-        rules = result[:rules].map { |rule| normalize_draft_rule(rule) }
+        rules = result[:rules]
+          .select { |rule| rule[:upstream_id] == result[:upstream_id] }
+          .map { |rule| normalize_draft_rule(rule) }
 
         decision = Policy.decide(rules: rules, target: result[:target], args: result[:args] || {}, kind: kind,
                                  has_bound_policies: true)
