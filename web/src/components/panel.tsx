@@ -1,13 +1,14 @@
 import type { ReactNode } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export function Panel({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <div className="border border-border">
-      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-        <h2 className="font-mono text-xs font-medium tracking-widest text-muted-foreground uppercase">{title}</h2>
+    <Card>
+      <CardHeader className={action ? "flex flex-row items-center justify-between" : undefined}>
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         {action}
-      </div>
-      <div className="space-y-3 p-4">{children}</div>
-    </div>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
   )
 }
