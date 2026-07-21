@@ -80,13 +80,20 @@ export function UpstreamsPage() {
             }}
           >
             <DialogTrigger asChild>
-              <Button size="sm">New upstream</Button>
+              <Button
+                size="sm"
+                className="rounded-none bg-foreground font-mono text-xs tracking-widest text-background uppercase hover:bg-foreground/80"
+              >
+                New upstream
+              </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-lg rounded-none">
               {createdUpstream ? (
                 <>
                   <DialogHeader>
-                    <DialogTitle>Connect {createdUpstream.slug}</DialogTitle>
+                    <DialogTitle className="font-mono text-sm tracking-widest uppercase">
+                      Connect {createdUpstream.slug}
+                    </DialogTitle>
                   </DialogHeader>
                   <p className="text-sm text-muted-foreground">
                     <span className="font-mono">{createdUpstream.slug}</span> was created. This server uses OAuth, so
@@ -94,10 +101,18 @@ export function UpstreamsPage() {
                     new tab to sign in and authorize AMG.
                   </p>
                   <DialogFooter>
-                    <Button variant="ghost" onClick={() => setOpen(false)}>
+                    <Button
+                      variant="ghost"
+                      className="rounded-none font-mono text-xs tracking-widest uppercase"
+                      onClick={() => setOpen(false)}
+                    >
                       Do this later
                     </Button>
-                    <Button disabled={connectOAuth.isPending} onClick={() => connectOAuth.mutate(createdUpstream)}>
+                    <Button
+                      className="rounded-none bg-foreground font-mono text-xs tracking-widest text-background uppercase hover:bg-foreground/80"
+                      disabled={connectOAuth.isPending}
+                      onClick={() => connectOAuth.mutate(createdUpstream)}
+                    >
                       Connect
                     </Button>
                   </DialogFooter>
@@ -105,18 +120,27 @@ export function UpstreamsPage() {
               ) : (
                 <>
                   <DialogHeader>
-                    <DialogTitle>New upstream</DialogTitle>
+                    <DialogTitle className="font-mono text-sm tracking-widest uppercase">New upstream</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label>Slug</Label>
-                        <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="github" />
+                        <Label className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                          Slug
+                        </Label>
+                        <Input
+                          value={slug}
+                          onChange={(e) => setSlug(e.target.value)}
+                          placeholder="github"
+                          className="rounded-none"
+                        />
                       </div>
                       <div className="space-y-1.5">
-                        <Label>Kind</Label>
+                        <Label className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                          Kind
+                        </Label>
                         <Select value={kind} onValueChange={(v) => setKind(v as UpstreamKind)}>
-                          <SelectTrigger>
+                          <SelectTrigger className="rounded-none">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -128,13 +152,22 @@ export function UpstreamsPage() {
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Display name</Label>
-                      <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="GitHub" />
+                      <Label className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                        Display name
+                      </Label>
+                      <Input
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        placeholder="GitHub"
+                        className="rounded-none"
+                      />
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Config (JSON)</Label>
+                      <Label className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                        Config (JSON)
+                      </Label>
                       <textarea
-                        className="h-28 w-full rounded-md border border-input bg-transparent p-2 font-mono text-xs"
+                        className="h-28 w-full rounded-none border border-input bg-transparent p-2 font-mono text-xs"
                         value={configText}
                         onChange={(e) => setConfigText(e.target.value)}
                       />
@@ -147,9 +180,11 @@ export function UpstreamsPage() {
                       )}
                     </div>
                     <div className="space-y-1.5">
-                      <Label>Secrets (JSON, write-only)</Label>
+                      <Label className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                        Secrets (JSON, write-only)
+                      </Label>
                       <textarea
-                        className="h-16 w-full rounded-md border border-input bg-transparent p-2 font-mono text-xs"
+                        className="h-16 w-full rounded-none border border-input bg-transparent p-2 font-mono text-xs"
                         value={secretsText}
                         onChange={(e) => setSecretsText(e.target.value)}
                         placeholder='{"github_token": "ghp_..."}'
@@ -158,6 +193,7 @@ export function UpstreamsPage() {
                   </div>
                   <DialogFooter>
                     <Button
+                      className="rounded-none bg-foreground font-mono text-xs tracking-widest text-background uppercase hover:bg-foreground/80"
                       disabled={!slug || !displayName || createUpstream.isPending}
                       onClick={() => createUpstream.mutate()}
                     >
@@ -178,30 +214,42 @@ export function UpstreamsPage() {
           No upstreams yet. Register an MCP server or REST API to start authoring policies against it.
         </p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Slug</TableHead>
-              <TableHead>Kind</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.upstreams.map((u) => (
-              <TableRow
-                key={u.id}
-                className="cursor-pointer"
-                onClick={() => navigate({ to: "/upstreams/$upstreamId", params: { upstreamId: u.id } })}
-              >
-                <TableCell className="font-mono text-sm">{u.slug}</TableCell>
-                <TableCell className="font-mono text-sm text-muted-foreground">{u.kind}</TableCell>
-                <TableCell>
-                  <StatusDot status={u.status === "active" ? "healthy" : "degraded"} label={u.status} />
-                </TableCell>
+        <div className="border border-border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                  Slug
+                </TableHead>
+                <TableHead className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                  Kind
+                </TableHead>
+                <TableHead className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+                  Status
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {data.upstreams.map((u) => (
+                <TableRow
+                  key={u.id}
+                  className="cursor-pointer"
+                  onClick={() => navigate({ to: "/upstreams/$upstreamId", params: { upstreamId: u.id } })}
+                >
+                  <TableCell className="font-mono text-sm">{u.slug}</TableCell>
+                  <TableCell className="font-mono text-sm text-muted-foreground">{u.kind}</TableCell>
+                  <TableCell>
+                    <StatusDot
+                      status={u.status === "active" ? "healthy" : "degraded"}
+                      label={u.status}
+                      className="font-mono text-xs tracking-wide uppercase"
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </div>
   )

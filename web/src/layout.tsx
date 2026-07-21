@@ -19,9 +19,9 @@ export function RootLayout() {
     <div className="flex min-h-screen">
       <aside className="flex w-56 shrink-0 flex-col border-r border-border">
         <div className="flex h-14 items-center border-b border-border px-4">
-          <span className="font-mono text-sm font-semibold tracking-tight">amg</span>
+          <span className="font-mono text-sm font-semibold tracking-widest uppercase">amg</span>
         </div>
-        <nav className="flex flex-1 flex-col gap-0.5 p-2">
+        <nav className="flex flex-1 flex-col gap-px p-2">
           {NAV.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to)
             return (
@@ -29,27 +29,27 @@ export function RootLayout() {
                 key={to}
                 to={to}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                  "flex items-center gap-2.5 border-l-2 px-2.5 py-1.5 font-mono text-xs tracking-widest uppercase transition-colors",
                   active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    ? "border-foreground bg-muted text-foreground"
+                    : "border-transparent text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground",
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5" />
                 {label}
               </Link>
             )
           })}
         </nav>
         <div className="border-t border-border p-3">
-          <div className="mb-2 truncate text-xs text-muted-foreground">
+          <div className="mb-2 truncate font-mono text-xs text-muted-foreground">
             {admin?.email} &middot; {admin?.role}
           </div>
           <button
             onClick={() => void logout()}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-2 font-mono text-xs tracking-widest text-muted-foreground uppercase hover:text-foreground"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-3.5 w-3.5" />
             Log out
           </button>
         </div>

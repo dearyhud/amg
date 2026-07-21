@@ -83,7 +83,7 @@ export interface Policy {
 
 export interface EffectivePermissions {
   agent_id: string
-  rules: (PolicyRule & { created_at: string })[]
+  rules: (PolicyRule & { created_at: string; policy_id: string; policy_name: string })[]
 }
 
 export interface AuditEvent {

@@ -129,11 +129,22 @@ module AMG
 
       # All rules across the agent's bound active policies, across every
       # upstream — the computed effective-permissions view (SPEC §11,
-      # GET /agents/{id}/permissions).
+      # GET /agents/{id}/permissions). Each rule carries its owning policy's
+      # id/name so callers can group the flat rule list back into roles.
       def self.rules_for_agent(db, agent_id)
         bound_rules(db, agent_id)
           .select_all(:policy_rules)
-          .map { |row| row_to_rule(row).merge("upstream_id" => row[:upstream_id]) }
+          .select_append(
+            Sequel[:policies][:id].as(:policy_id),
+            Sequel[:policies][:name].as(:policy_name)
+          )
+          .map do |row|
+            row_to_rule(row).merge(
+              "upstream_id" => row[:upstream_id],
+              "policy_id" => row[:policy_id],
+              "policy_name" => row[:policy_name]
+            )
+          end
       end
 
       def self.bound_rules(db, agent_id)
