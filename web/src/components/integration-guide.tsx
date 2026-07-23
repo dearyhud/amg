@@ -64,7 +64,7 @@ export function IntegrationGuide({ upstreams, apiKey }: { upstreams: Upstream[];
   const claudeCodeCli = mcpUpstreams
     .map(
       (u) =>
-        `claude mcp add --transport http ${u.slug} ${origin}/mcp/${u.slug} --header "Authorization: Bearer ${apiKey}"`,
+        `claude mcp add --transport http ${u.slug} ${origin}/mcp/${u.slug} --header "Authorization: Bearer ${apiKey}" --scope user`,
     )
     .join("\n")
 
